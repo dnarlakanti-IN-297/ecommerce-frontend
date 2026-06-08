@@ -1,0 +1,44 @@
+apiVersion: automation.cloudbees.io/v1alpha1
+kind: workflow
+name: Frontend CI
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  scm-token-own: read
+  id-token: read
+
+jobs:
+  build:
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      GIT_COMMIT_SHA: ${{ cloudbees.scm.sha }}
+
+    steps:
+      - name: Checkout code
+        uses: cloudbees-io/checkout@v1
+
+      - name: Configure Docker Hub credentials
+        uses: cloudbees-io/configure-oci-credentials@v1
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Frontend Image
+        uses: cloudbees-io/kaniko@v1
+        with:
+          context: .
+          destination: ${{ secrets.DOCKERHUB_USERNAME }}/ecommerce-frontend:${{ cloudbees.scm.sha }},${{ secrets.DOCKERHUB_USERNAME }}/ecommerce-frontend:latest
+
+      - name: Output image tags
+        uses: docker://alpine:latest
+        shell: sh
+        run: |
+          echo "✅ Frontend image built and pushed:"
+          echo "$DOCKERHUB_USERNAME/ecommerce-frontend:$GIT_COMMIT_SHA"
