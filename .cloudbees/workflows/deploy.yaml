@@ -13,6 +13,10 @@ on:
         type: string
         required: true
         description: "Target environment (dev, staging, prod)"
+      kubeconfig:
+        type: string
+        required: true
+        description: "Kubernetes config for cluster access"
 
 jobs:
   deploy-frontend:
@@ -40,10 +44,10 @@ jobs:
           curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
           chmod +x kubectl && mv kubectl /usr/local/bin/
           mkdir -p ~/.kube
-          echo "$KUBECONFIG_CONTENT" > ~/.kube/config
+          echo "$KUBECONFIG_BASE64" | base64 -d > ~/.kube/config
           kubectl cluster-info
         env:
-          KUBECONFIG_CONTENT: ${{ secrets.KUBECONFIG }}
+          KUBECONFIG_BASE64: ${{ inputs.kubeconfig }}
 
       - name: Determine namespace
         uses: docker://alpine:latest
