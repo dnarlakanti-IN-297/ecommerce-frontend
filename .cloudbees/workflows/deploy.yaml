@@ -32,28 +32,18 @@ jobs:
           repository: dnarlakanti-IN-297/ecommerce-infra
           ref: main
 
-      - name: Configure kubectl with GKE credentials
-        uses: docker://google/cloud-sdk:alpine
+      - name: Configure kubectl
+        uses: docker://alpine:latest
         shell: sh
         run: |
-          # Authenticate using workload identity federation
-          gcloud auth login --brief --cred-file=/dev/stdin <<EOF
-          {
-            "type": "external_account",
-            "audience": "//iam.googleapis.com/projects/919683507345/locations/global/workloadIdentityPools/cloudbees-pool/providers/cloudbees-provider",
-            "subject_token_type": "urn:ietf:params:oauth:token-type:jwt",
-            "token_url": "https://sts.googleapis.com/v1/token",
-            "service_account_impersonation_url": "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/cloudbees-deployer@unify-enterprise-reference.iam.gserviceaccount.com:generateAccessToken",
-            "credential_source": {
-              "file": "${CLOUDBEES_OIDC_TOKEN_FILE}",
-              "format": {
-                "type": "text"
-              }
-            }
-          }
-          EOF
-
-          gcloud container clusters get-credentials $GKE_CLUSTER --zone=$GKE_ZONE --project=$GKE_PROJECT
+          apk add --no-cache curl
+          curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
+          chmod +x kubectl && mv kubectl /usr/local/bin/
+          mkdir -p ~/.kube
+          echo "$KUBECONFIG_CONTENT" > ~/.kube/config
+          kubectl cluster-info
+        env:
+          KUBECONFIG_CONTENT: ${{ secrets.KUBECONFIG }}
 
       - name: Determine namespace
         uses: docker://alpine:latest
