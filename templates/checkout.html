@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout - E-Commerce Store{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h2 class="mb-4"><i class="fas fa-credit-card"></i> Checkout</h2>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Shipping Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="/place-order" id="checkoutForm">
+                        <div class="mb-3">
+                            <label for="fullName" class="form-label">Full Name *</label>
+                            <input type="text" class="form-control" id="fullName" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email *</label>
+                            <input type="email" class="form-control" id="email" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Phone Number *</label>
+                            <input type="tel" class="form-control" id="phone" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Street Address *</label>
+                            <textarea class="form-control" id="address" rows="2" name="shipping_address" required></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="city" class="form-label">City *</label>
+                                <input type="text" class="form-control" id="city" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="state" class="form-label">State *</label>
+                                <input type="text" class="form-control" id="state" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="zip" class="form-label">ZIP Code *</label>
+                                <input type="text" class="form-control" id="zip" required>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h5 class="mb-3">Payment Method</h5>
+                        <div class="mb-3">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="payment_method" id="creditCard"
+                                       value="credit_card" checked>
+                                <label class="form-check-label" for="creditCard">
+                                    <i class="fas fa-credit-card"></i> Credit Card
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="payment_method" id="paypal"
+                                       value="paypal">
+                                <label class="form-check-label" for="paypal">
+                                    <i class="fab fa-paypal"></i> PayPal
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="payment_method" id="cash"
+                                       value="cash_on_delivery">
+                                <label class="form-check-label" for="cash">
+                                    <i class="fas fa-money-bill-wave"></i> Cash on Delivery
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success btn-lg w-100 mt-3">
+                            <i class="fas fa-check-circle"></i> Place Order
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="mb-3">Items ({{ cart.items|length }})</h6>
+                    {% for item in cart.items %}
+                    <div class="d-flex justify-content-between mb-2 small">
+                        <span>{{ item.name }} × {{ item.quantity }}</span>
+                        <span>${{ "%.2f"|format(item.price * item.quantity) }}</span>
+                    </div>
+                    {% endfor %}
+
+                    <hr>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal:</span>
+                        <span>${{ "%.2f"|format(cart.total) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Tax (8%):</span>
+                        <span>${{ "%.2f"|format(cart.total * 0.08) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Shipping:</span>
+                        <span>
+                            {% if cart.total > 50 %}
+                                <span class="text-success">FREE</span>
+                            {% else %}
+                                $9.99
+                            {% endif %}
+                        </span>
+                    </div>
+
+                    <hr>
+
+                    <div class="d-flex justify-content-between">
+                        <strong>Total:</strong>
+                        <strong class="text-primary h5">
+                            {% if cart.total > 50 %}
+                                ${{ "%.2f"|format(cart.total * 1.08) }}
+                            {% else %}
+                                ${{ "%.2f"|format(cart.total * 1.08 + 9.99) }}
+                            {% endif %}
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

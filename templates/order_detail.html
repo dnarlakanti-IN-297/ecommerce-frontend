@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Order #{{ order.id }} - E-Commerce Store{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h2 class="mb-4"><i class="fas fa-receipt"></i> Order Details</h2>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Order #ORD-{{ order.id }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Order Date:</strong></p>
+                            <p class="text-muted">{{ order.created_at }}</p>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <p class="mb-1"><strong>Status:</strong></p>
+                            <span class="badge bg-success">{{ order.status|upper }}</span>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <h6 class="mb-3">Order Items</h6>
+                    {% for item in order.items %}
+                    <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                        <div>
+                            <strong>Product #{{ item.product_id }}</strong><br>
+                            <small class="text-muted">Quantity: {{ item.quantity }}</small>
+                        </div>
+                        <div class="text-end">
+                            <strong>${{ "%.2f"|format(item.price * item.quantity) }}</strong><br>
+                            <small class="text-muted">${{ "%.2f"|format(item.price) }} each</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <h5>Total Amount:</h5>
+                        <h5 class="text-primary">${{ "%.2f"|format(order.total_amount) }}</h5>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Shipping Address</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ order.shipping_address or 'N/A' }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Order Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <i class="fas fa-check-circle text-success"></i>
+                        <span class="ms-2">Order Placed</span>
+                    </div>
+                    <div class="mb-3 text-muted">
+                        <i class="far fa-circle"></i>
+                        <span class="ms-2">Processing</span>
+                    </div>
+                    <div class="mb-3 text-muted">
+                        <i class="far fa-circle"></i>
+                        <span class="ms-2">Shipped</span>
+                    </div>
+                    <div class="text-muted">
+                        <i class="far fa-circle"></i>
+                        <span class="ms-2">Delivered</span>
+                    </div>
+                </div>
+            </div>
+
+            <a href="/products" class="btn btn-outline-secondary w-100 mt-3">
+                <i class="fas fa-arrow-left"></i> Continue Shopping
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

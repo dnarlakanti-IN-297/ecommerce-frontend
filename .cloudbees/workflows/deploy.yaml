@@ -1,0 +1,134 @@
+apiVersion: automation.cloudbees.io/v1alpha1
+kind: workflow
+name: Frontend Deploy
+
+on:
+  workflow_call:
+    inputs:
+      artifact-id:
+        type: string
+        required: true
+        description: "Docker image tag (Git SHA) to deploy"
+      environment:
+        type: string
+        required: true
+        description: "Target environment (dev, staging, prod)"
+
+jobs:
+  deploy-frontend:
+    environment: ${{ inputs.environment }}
+    env:
+      IMAGE_TAG: ${{ inputs.artifact-id }}
+      ENVIRONMENT: ${{ inputs.environment }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      GKE_CLUSTER: unifyintegration
+      GKE_ZONE: us-east1-b
+      GKE_PROJECT: unify-enterprise-reference
+
+    steps:
+      - name: Checkout infra repo
+        uses: cloudbees-io/checkout@v1
+        with:
+          repository: dnarlakanti-IN-297/ecommerce-infra
+          ref: main
+
+      - name: Configure kubectl with GKE credentials
+        uses: docker://google/cloud-sdk:alpine
+        shell: sh
+        run: |
+          # Authenticate using workload identity federation
+          gcloud auth login --brief --cred-file=/dev/stdin <<EOF
+          {
+            "type": "external_account",
+            "audience": "//iam.googleapis.com/projects/919683507345/locations/global/workloadIdentityPools/cloudbees-pool/providers/cloudbees-provider",
+            "subject_token_type": "urn:ietf:params:oauth:token-type:jwt",
+            "token_url": "https://sts.googleapis.com/v1/token",
+            "service_account_impersonation_url": "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/cloudbees-deployer@unify-enterprise-reference.iam.gserviceaccount.com:generateAccessToken",
+            "credential_source": {
+              "file": "${CLOUDBEES_OIDC_TOKEN_FILE}",
+              "format": {
+                "type": "text"
+              }
+            }
+          }
+          EOF
+
+          gcloud container clusters get-credentials $GKE_CLUSTER --zone=$GKE_ZONE --project=$GKE_PROJECT
+
+      - name: Determine namespace
+        uses: docker://alpine:latest
+        shell: sh
+        run: |
+          case "$ENVIRONMENT" in
+            dev)
+              NAMESPACE="ecommerce-dev"
+              ;;
+            staging)
+              NAMESPACE="ecommerce-staging"
+              ;;
+            prod)
+              NAMESPACE="ecommerce-prod"
+              ;;
+            *)
+              echo "❌ Unknown environment: $ENVIRONMENT"
+              exit 1
+              ;;
+          esac
+
+          echo "NAMESPACE=$NAMESPACE" >> $CLOUDBEES_OUTPUTS/namespace
+          echo "✅ Deploying frontend to namespace: $NAMESPACE"
+
+      - name: Create namespace if not exists
+        uses: docker://google/cloud-sdk:alpine
+        shell: sh
+        run: |
+          NAMESPACE=$(cat $CLOUDBEES_OUTPUTS/namespace)
+          kubectl get namespace $NAMESPACE || kubectl create namespace $NAMESPACE
+          echo "✅ Namespace $NAMESPACE ready"
+
+      - name: Deploy frontend with Helm
+        uses: docker://alpine/helm:latest
+        shell: sh
+        run: |
+          NAMESPACE=$(cat $CLOUDBEES_OUTPUTS/namespace)
+
+          echo "🚀 Deploying frontend version: $IMAGE_TAG"
+          echo "📍 Environment: $ENVIRONMENT"
+          echo "📦 Namespace: $NAMESPACE"
+
+          # Determine values file based on environment
+          VALUES_FILE="helm/ecommerce/values-${ENVIRONMENT}.yaml"
+          if [ ! -f "$VALUES_FILE" ]; then
+            VALUES_FILE="helm/ecommerce/values.yaml"
+          fi
+
+          # Deploy frontend only (not full app)
+          helm upgrade --install ecommerce-frontend ./helm/ecommerce \
+            --namespace $NAMESPACE \
+            --values $VALUES_FILE \
+            --set frontend.image.repository=$DOCKERHUB_USERNAME/ecommerce-frontend \
+            --set frontend.image.tag=$IMAGE_TAG \
+            --set backend.enabled=false \
+            --set database.enabled=false \
+            --wait \
+            --timeout 5m
+
+          echo "✅ Frontend deployment successful!"
+
+      - name: Verify frontend deployment
+        uses: docker://google/cloud-sdk:alpine
+        shell: sh
+        run: |
+          NAMESPACE=$(cat $CLOUDBEES_OUTPUTS/namespace)
+
+          echo "📊 Checking frontend pods..."
+          kubectl get pods -n $NAMESPACE -l app=ecommerce-frontend
+
+          echo ""
+          echo "⏳ Waiting for frontend pods to be ready..."
+          kubectl wait --for=condition=ready pod \
+            -l app=ecommerce-frontend \
+            -n $NAMESPACE \
+            --timeout=300s
+
+          echo "✅ Frontend is running!"

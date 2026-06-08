@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }} - E-Commerce Store{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-md-6">
+            <img src="{{ product.image_url or 'https://via.placeholder.com/600x400?text=' + product.name }}"
+                 class="img-fluid rounded" alt="{{ product.name }}">
+        </div>
+        <div class="col-md-6">
+            <h1>{{ product.name }}</h1>
+            <div class="mb-3">
+                <span class="badge bg-primary">{{ product.category }}</span>
+                <span class="text-warning ms-2">
+                    <i class="fas fa-star"></i> {{ "%.1f"|format(product.rating) }} / 5.0
+                </span>
+            </div>
+
+            <h2 class="text-primary mb-4">${{ "%.2f"|format(product.price) }}</h2>
+
+            <p class="lead">{{ product.description }}</p>
+
+            <div class="mb-4">
+                {% if product.stock > 0 %}
+                    <span class="badge bg-success">
+                        <i class="fas fa-check-circle"></i> In Stock ({{ product.stock }} available)
+                    </span>
+                {% else %}
+                    <span class="badge bg-danger">
+                        <i class="fas fa-times-circle"></i> Out of Stock
+                    </span>
+                {% endif %}
+            </div>
+
+            <form method="POST" action="/add-to-cart/{{ product.id }}">
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <label for="quantity" class="form-label">Quantity</label>
+                        <input type="number" class="form-control" id="quantity" name="quantity"
+                               value="1" min="1" max="{{ product.stock }}"
+                               {% if product.stock == 0 %}disabled{% endif %}>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg"
+                            {% if product.stock == 0 %}disabled{% endif %}>
+                        <i class="fas fa-shopping-cart"></i> Add to Cart
+                    </button>
+                </div>
+            </form>
+
+            <div class="mt-4">
+                <a href="/products" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Continue Shopping
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-md-12">
+            <h3>Product Information</h3>
+            <table class="table table-bordered">
+                <tbody>
+                    <tr>
+                        <th width="200">Product ID</th>
+                        <td>{{ product.id }}</td>
+                    </tr>
+                    <tr>
+                        <th>Category</th>
+                        <td>{{ product.category }}</td>
+                    </tr>
+                    <tr>
+                        <th>Rating</th>
+                        <td>{{ "%.1f"|format(product.rating) }} / 5.0</td>
+                    </tr>
+                    <tr>
+                        <th>Stock Status</th>
+                        <td>
+                            {% if product.stock > 0 %}
+                                <span class="text-success">Available ({{ product.stock }} units)</span>
+                            {% else %}
+                                <span class="text-danger">Out of Stock</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
