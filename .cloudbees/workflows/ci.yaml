@@ -36,9 +36,7 @@ jobs:
           context: .
           destination: ${{ secrets.DOCKERHUB_USERNAME }}/ecommerce-frontend:${{ cloudbees.scm.sha }},${{ secrets.DOCKERHUB_USERNAME }}/ecommerce-frontend:latest
 
-      - name: Output image tags
-        uses: docker://alpine:latest
-        shell: sh
-        run: |
-          echo "✅ Frontend image built and pushed:"
-          echo "$DOCKERHUB_USERNAME/ecommerce-frontend:$GIT_COMMIT_SHA"
+      - name: Publish artifact
+        uses: cloudbees-io/publish-evidence-item@v1
+        with:
+          content: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/ecommerce-frontend:${{ cloudbees.scm.sha }}
