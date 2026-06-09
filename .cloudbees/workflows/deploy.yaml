@@ -25,9 +25,6 @@ jobs:
       IMAGE_TAG: ${{ inputs.artifact-id }}
       ENVIRONMENT: ${{ inputs.environment }}
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      GKE_CLUSTER: unifyintegration
-      GKE_ZONE: us-east1-b
-      GKE_PROJECT: unify-enterprise-reference
 
     steps:
       - name: Checkout infra repo
@@ -49,80 +46,116 @@ jobs:
         env:
           KUBECONFIG_BASE64: ${{ inputs.kubeconfig }}
 
-      - name: Determine namespace
+      - name: Create namespace if not exists
         uses: docker://alpine:latest
         shell: sh
         run: |
+          apk add --no-cache curl
+          curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
+          chmod +x kubectl && mv kubectl /usr/local/bin/
+          mkdir -p ~/.kube
+          echo "$KUBECONFIG_BASE64" | base64 -d > ~/.kube/config
+
           case "$ENVIRONMENT" in
-            dev)
-              NAMESPACE="ecommerce-dev"
-              ;;
-            staging)
-              NAMESPACE="ecommerce-staging"
-              ;;
-            prod)
-              NAMESPACE="ecommerce-prod"
-              ;;
-            *)
-              echo "❌ Unknown environment: $ENVIRONMENT"
-              exit 1
-              ;;
+            dev) NAMESPACE="ecommerce-dev" ;;
+            staging) NAMESPACE="ecommerce-staging" ;;
+            prod) NAMESPACE="ecommerce-prod" ;;
+            *) echo "❌ Unknown environment: $ENVIRONMENT"; exit 1 ;;
           esac
 
-          echo "NAMESPACE=$NAMESPACE" >> $CLOUDBEES_OUTPUTS/namespace
-          echo "✅ Deploying frontend to namespace: $NAMESPACE"
-
-      - name: Create namespace if not exists
-        uses: docker://google/cloud-sdk:alpine
-        shell: sh
-        run: |
-          NAMESPACE=$(cat $CLOUDBEES_OUTPUTS/namespace)
           kubectl get namespace $NAMESPACE || kubectl create namespace $NAMESPACE
           echo "✅ Namespace $NAMESPACE ready"
+        env:
+          KUBECONFIG_BASE64: ${{ inputs.kubeconfig }}
+
+      - name: Cleanup old Helm releases
+        uses: docker://alpine/helm:latest
+        shell: sh
+        run: |
+          apk add --no-cache curl
+          curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
+          chmod +x kubectl && mv kubectl /usr/local/bin/
+          mkdir -p ~/.kube
+          echo "$KUBECONFIG_BASE64" | base64 -d > ~/.kube/config
+
+          case "$ENVIRONMENT" in
+            dev) NAMESPACE="ecommerce-dev" ;;
+            staging) NAMESPACE="ecommerce-staging" ;;
+            prod) NAMESPACE="ecommerce-prod" ;;
+          esac
+
+          helm uninstall ecommerce-frontend -n $NAMESPACE 2>/dev/null || true
+          echo "✅ Cleanup done"
+        env:
+          KUBECONFIG_BASE64: ${{ inputs.kubeconfig }}
 
       - name: Deploy frontend with Helm
         uses: docker://alpine/helm:latest
         shell: sh
         run: |
-          NAMESPACE=$(cat $CLOUDBEES_OUTPUTS/namespace)
+          apk add --no-cache curl
+          curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
+          chmod +x kubectl && mv kubectl /usr/local/bin/
+          mkdir -p ~/.kube
+          echo "$KUBECONFIG_BASE64" | base64 -d > ~/.kube/config
+
+          case "$ENVIRONMENT" in
+            dev) NAMESPACE="ecommerce-dev" ;;
+            staging) NAMESPACE="ecommerce-staging" ;;
+            prod) NAMESPACE="ecommerce-prod" ;;
+          esac
 
           echo "🚀 Deploying frontend version: $IMAGE_TAG"
           echo "📍 Environment: $ENVIRONMENT"
           echo "📦 Namespace: $NAMESPACE"
 
-          # Determine values file based on environment
           VALUES_FILE="helm/ecommerce/values-${ENVIRONMENT}.yaml"
           if [ ! -f "$VALUES_FILE" ]; then
             VALUES_FILE="helm/ecommerce/values.yaml"
           fi
 
-          # Deploy frontend only (not full app)
           helm upgrade --install ecommerce ./helm/ecommerce \
             --namespace $NAMESPACE \
             --values $VALUES_FILE \
             --set frontend.image.repository=$DOCKERHUB_USERNAME/ecommerce-frontend \
             --set frontend.image.tag=latest \
+            --set frontend.image.pullPolicy=Always \
             --set backend.enabled=false \
             --set database.enabled=false \
-            --wait \
-            --timeout 5m
+            --set ingress.enabled=false \
+            --timeout 10m
 
           echo "✅ Frontend deployment successful!"
+        env:
+          KUBECONFIG_BASE64: ${{ inputs.kubeconfig }}
 
       - name: Verify frontend deployment
-        uses: docker://google/cloud-sdk:alpine
+        uses: docker://alpine:latest
         shell: sh
         run: |
-          NAMESPACE=$(cat $CLOUDBEES_OUTPUTS/namespace)
+          apk add --no-cache curl
+          curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
+          chmod +x kubectl && mv kubectl /usr/local/bin/
+          mkdir -p ~/.kube
+          echo "$KUBECONFIG_BASE64" | base64 -d > ~/.kube/config
+
+          case "$ENVIRONMENT" in
+            dev) NAMESPACE="ecommerce-dev" ;;
+            staging) NAMESPACE="ecommerce-staging" ;;
+            prod) NAMESPACE="ecommerce-prod" ;;
+          esac
 
           echo "📊 Checking frontend pods..."
-          kubectl get pods -n $NAMESPACE -l app=ecommerce-frontend
+          kubectl get pods -n $NAMESPACE -l tier=frontend
 
-          echo ""
-          echo "⏳ Waiting for frontend pods to be ready..."
-          kubectl wait --for=condition=ready pod \
-            -l app=ecommerce-frontend \
-            -n $NAMESPACE \
-            --timeout=300s
+          kubectl rollout status deployment/ecommerce-frontend -n $NAMESPACE --timeout=300s || {
+            echo "❌ Deployment failed. Pod details:"
+            kubectl describe pods -n $NAMESPACE -l tier=frontend
+            echo "--- Pod logs ---"
+            kubectl logs -n $NAMESPACE -l tier=frontend --tail=50
+            exit 1
+          }
 
           echo "✅ Frontend is running!"
+        env:
+          KUBECONFIG_BASE64: ${{ inputs.kubeconfig }}
