@@ -97,7 +97,7 @@ jobs:
           fi
 
           # Deploy frontend only (not full app)
-          helm upgrade --install ecommerce-frontend ./helm/ecommerce \
+          helm upgrade --install ecommerce ./helm/ecommerce \
             --namespace $NAMESPACE \
             --values $VALUES_FILE \
             --set frontend.image.repository=$DOCKERHUB_USERNAME/ecommerce-frontend \
