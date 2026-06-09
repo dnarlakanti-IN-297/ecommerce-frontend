@@ -122,7 +122,6 @@ jobs:
             --set frontend.image.pullPolicy=Always \
             --set backend.enabled=false \
             --set database.enabled=false \
-            --set ingress.enabled=false \
             --timeout 10m
 
           echo "✅ Frontend deployment successful!"
