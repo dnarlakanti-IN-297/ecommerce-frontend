@@ -109,19 +109,16 @@ jobs:
           echo "📍 Environment: $ENVIRONMENT"
           echo "📦 Namespace: $NAMESPACE"
 
-          VALUES_FILE="helm/ecommerce/values-${ENVIRONMENT}.yaml"
+          VALUES_FILE="helm/ecommerce-frontend/values-${ENVIRONMENT}.yaml"
           if [ ! -f "$VALUES_FILE" ]; then
-            VALUES_FILE="helm/ecommerce/values.yaml"
+            VALUES_FILE="helm/ecommerce-frontend/values.yaml"
           fi
 
-          helm upgrade --install ecommerce-frontend ./helm/ecommerce \
+          helm upgrade --install ecommerce-frontend ./helm/ecommerce-frontend \
             --namespace $NAMESPACE \
             --values $VALUES_FILE \
-            --set frontend.image.repository=$DOCKERHUB_USERNAME/ecommerce-frontend \
-            --set frontend.image.tag=latest \
-            --set frontend.image.pullPolicy=Always \
-            --set backend.enabled=false \
-            --set database.enabled=false \
+            --set image.repository=$DOCKERHUB_USERNAME/ecommerce-frontend \
+            --set image.tag=latest \
             --timeout 10m
 
           echo "✅ Frontend deployment successful!"
