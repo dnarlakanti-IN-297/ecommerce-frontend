@@ -114,7 +114,7 @@ jobs:
             VALUES_FILE="helm/ecommerce/values.yaml"
           fi
 
-          helm upgrade --install ecommerce ./helm/ecommerce \
+          helm upgrade --install ecommerce-frontend ./helm/ecommerce \
             --namespace $NAMESPACE \
             --values $VALUES_FILE \
             --set frontend.image.repository=$DOCKERHUB_USERNAME/ecommerce-frontend \
