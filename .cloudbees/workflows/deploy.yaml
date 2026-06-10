@@ -84,7 +84,7 @@ jobs:
             prod) NAMESPACE="ecommerce-prod" ;;
           esac
 
-          helm uninstall ecommerce-frontend -n $NAMESPACE 2>/dev/null || true
+          helm uninstall ecommerce -n $NAMESPACE 2>/dev/null || true
           echo "✅ Cleanup done"
         env:
           KUBECONFIG_BASE64: ${{ inputs.kubeconfig }}
