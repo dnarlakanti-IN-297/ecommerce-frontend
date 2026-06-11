@@ -17,6 +17,11 @@ on:
         type: string
         required: true
         description: "Kubernetes config for cluster access"
+    secrets:
+      DOCKERHUB_USERNAME:
+        required: true
+      DOCKERHUB_TOKEN:
+        required: false
 
 jobs:
   deploy-frontend:
