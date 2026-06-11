@@ -86,13 +86,7 @@ jobs:
 
           helm uninstall ecommerce -n $NAMESPACE 2>/dev/null || true
 
-          for release in ecommerce-database ecommerce-backend ecommerce-frontend; do
-            STATUS=$(helm status $release -n $NAMESPACE 2>/dev/null | grep STATUS | awk '{print $2}')
-            if [ "$STATUS" = "pending-install" ] || [ "$STATUS" = "pending-upgrade" ] || [ "$STATUS" = "pending-rollback" ]; then
-              echo "🔄 Resetting stuck release: $release ($STATUS)"
-              kubectl delete secret -n $NAMESPACE -l owner=helm,name=$release 2>/dev/null || true
-            fi
-          done
+          kubectl delete secret -n $NAMESPACE -l owner=helm,name=ecommerce-frontend 2>/dev/null || true
           echo "✅ Cleanup done"
         env:
           KUBECONFIG_BASE64: ${{ inputs.kubeconfig }}
