@@ -90,7 +90,7 @@ jobs:
             STATUS=$(helm status $release -n $NAMESPACE 2>/dev/null | grep STATUS | awk '{print $2}')
             if [ "$STATUS" = "pending-install" ] || [ "$STATUS" = "pending-upgrade" ] || [ "$STATUS" = "pending-rollback" ]; then
               echo "🔄 Resetting stuck release: $release ($STATUS)"
-              helm rollback $release 0 -n $NAMESPACE 2>/dev/null || helm uninstall $release -n $NAMESPACE 2>/dev/null || true
+              kubectl delete secret -n $NAMESPACE -l owner=helm,name=$release 2>/dev/null || true
             fi
           done
           echo "✅ Cleanup done"
