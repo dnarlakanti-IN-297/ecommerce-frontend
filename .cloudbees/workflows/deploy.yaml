@@ -17,10 +17,12 @@ on:
         type: string
         required: true
         description: "Kubernetes config for cluster access"
+    secrets:
+      DOCKERHUB_USERNAME:
+        required: true
 
 jobs:
   deploy-frontend:
-    environment: ${{ inputs.environment }}
     env:
       IMAGE_TAG: ${{ inputs.artifact-id }}
       ENVIRONMENT: ${{ inputs.environment }}
@@ -45,6 +47,7 @@ jobs:
           kubectl cluster-info
         env:
           KUBECONFIG_BASE64: ${{ inputs.kubeconfig }}
+          ENVIRONMENT: ${{ inputs.environment }}
 
       - name: Create namespace if not exists
         uses: docker://alpine:latest
@@ -67,6 +70,7 @@ jobs:
           echo "✅ Namespace $NAMESPACE ready"
         env:
           KUBECONFIG_BASE64: ${{ inputs.kubeconfig }}
+          ENVIRONMENT: ${{ inputs.environment }}
 
       - name: Cleanup old Helm releases
         uses: docker://alpine/helm:latest
@@ -85,17 +89,11 @@ jobs:
           esac
 
           helm uninstall ecommerce -n $NAMESPACE 2>/dev/null || true
-
-          for release in ecommerce-database ecommerce-backend ecommerce-frontend; do
-            STATUS=$(helm status $release -n $NAMESPACE 2>/dev/null | grep STATUS | awk '{print $2}')
-            if [ "$STATUS" = "pending-install" ] || [ "$STATUS" = "pending-upgrade" ] || [ "$STATUS" = "pending-rollback" ]; then
-              echo "🔄 Resetting stuck release: $release ($STATUS)"
-              kubectl delete secret -n $NAMESPACE -l owner=helm,name=$release 2>/dev/null || true
-            fi
-          done
+          kubectl delete secret -n $NAMESPACE -l owner=helm,name=ecommerce-frontend 2>/dev/null || true
           echo "✅ Cleanup done"
         env:
           KUBECONFIG_BASE64: ${{ inputs.kubeconfig }}
+          ENVIRONMENT: ${{ inputs.environment }}
 
       - name: Deploy frontend with Helm
         uses: docker://alpine/helm:latest
@@ -132,6 +130,8 @@ jobs:
           echo "✅ Frontend deployment successful!"
         env:
           KUBECONFIG_BASE64: ${{ inputs.kubeconfig }}
+          ENVIRONMENT: ${{ inputs.environment }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
 
       - name: Verify frontend deployment
         uses: docker://alpine:latest
@@ -163,3 +163,4 @@ jobs:
           echo "✅ Frontend is running!"
         env:
           KUBECONFIG_BASE64: ${{ inputs.kubeconfig }}
+          ENVIRONMENT: ${{ inputs.environment }}
