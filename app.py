@@ -3,11 +3,17 @@ import requests
 import os
 import uuid
 
+from feature_flags import flags, init_feature_flags
+
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
 
 # Backend API URL
 BACKEND_URL = os.getenv('BACKEND_URL', 'http://localhost:5000')
+
+# Feature management (CloudBees Unify) - initialized at import time so it
+# runs under both `python app.py` and gunicorn.
+init_feature_flags()
 
 def get_session_id():
     if 'session_id' not in session:
@@ -35,7 +41,11 @@ def index():
     else:
         products = []
 
-    return render_template('index.html', products=products)
+    return render_template(
+        'index.html',
+        products=products,
+        show_promo_banner=flags.show_promo_banner.is_enabled()
+    )
 
 @app.route('/products')
 def products():

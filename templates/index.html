@@ -3,6 +3,11 @@
 {% block title %}Home - E-Commerce Store{% endblock %}
 
 {% block content %}
+{% if show_promo_banner %}
+<div class="bg-warning text-dark text-center py-2">
+    <strong>Limited time offer!</strong> Managed live via CloudBees Unify feature management.
+</div>
+{% endif %}
 <div class="bg-primary text-white py-5">
     <div class="container text-center">
         <h1 class="display-4">Welcome to E-Commerce Store</h1>
