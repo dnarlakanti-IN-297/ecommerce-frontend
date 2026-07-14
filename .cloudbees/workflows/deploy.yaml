@@ -124,13 +124,14 @@ jobs:
             --namespace $NAMESPACE \
             --values $VALUES_FILE \
             --set image.repository=$DOCKERHUB_USERNAME/ecommerce-frontend \
-            --set image.tag=latest \
+            --set image.tag=$IMAGE_TAG \
             --timeout 10m
 
           echo "✅ Frontend deployment successful!"
         env:
           KUBECONFIG_BASE64: ${{ inputs.kubeconfig }}
           ENVIRONMENT: ${{ inputs.environment }}
+          IMAGE_TAG: ${{ inputs.artifact-id }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
 
       - name: Verify frontend deployment
