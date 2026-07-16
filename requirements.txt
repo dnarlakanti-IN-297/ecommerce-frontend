@@ -3,3 +3,6 @@ requests==2.31.0
 gunicorn==21.2.0
 python-dotenv==1.0.0
 rox  # CloudBees Unify server-side feature management SDK
+pytest==7.4.3
+pytest-flask==1.3.0
+pytest-cov==4.1.0
