@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - main
+      - developer
   workflow_dispatch:
 
 permissions:
@@ -13,7 +14,61 @@ permissions:
   id-token: read
 
 jobs:
+  test:
+    steps:
+      - name: Checkout code
+        uses: cloudbees-io/checkout@v1
+
+      - name: Run tests with pytest
+        uses: docker://python:3.11-slim
+        shell: sh
+        run: |
+          pip install --no-cache-dir -r requirements.txt
+          echo "🧪 Running frontend test suite..."
+          pytest tests/ \
+            -v \
+            -o junit_family=legacy \
+            --junit-xml=test-results.xml \
+            --cov=app \
+            --cov=feature_flags \
+            --cov-report=xml \
+            --cov-report=html \
+            --cov-report=term || true
+
+          if [ ! -f test-results.xml ]; then
+            echo "❌ test-results.xml NOT generated - tests did not run!"
+            exit 1
+          fi
+
+      - name: Publish test results
+        uses: cloudbees-io/publish-test-results@v2
+        with:
+          test-type: JUNIT
+          results-path: test-results.xml
+
+      - name: Extract test summary
+        id: test-summary
+        uses: docker://alpine:latest
+        shell: sh
+        run: |
+          apk add --no-cache grep
+          TOTAL=$(grep -oP 'tests="\K[0-9]+' test-results.xml || echo "0")
+          FAILURES=$(grep -oP 'failures="\K[0-9]+' test-results.xml || echo "0")
+          ERRORS=$(grep -oP 'errors="\K[0-9]+' test-results.xml || echo "0")
+          PASSED=$((TOTAL - FAILURES - ERRORS))
+          echo "$TOTAL" > $CLOUDBEES_OUTPUTS/TOTAL_TESTS
+          echo "$PASSED" > $CLOUDBEES_OUTPUTS/PASSED_TESTS
+          echo "$FAILURES" > $CLOUDBEES_OUTPUTS/FAILED_TESTS
+
+      - name: Publish test evidence
+        uses: ./.cloudbees/components/publish-test-evidence
+        with:
+          total-tests: ${{ steps.test-summary.outputs.TOTAL_TESTS }}
+          passed-tests: ${{ steps.test-summary.outputs.PASSED_TESTS }}
+          failed-tests: ${{ steps.test-summary.outputs.FAILED_TESTS }}
+
   build:
+    needs: test
     env:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}

@@ -1,0 +1,42 @@
+# CloudBees Unify Component: Publish Test Evidence
+# Reusable component for publishing test execution evidence
+
+apiVersion: automation.cloudbees.io/v1alpha1
+kind: action
+name: publish-test-evidence
+description: 'Publishes test execution evidence for compliance and traceability'
+
+inputs:
+  total-tests:
+    description: 'Total number of test cases'
+    required: true
+  passed-tests:
+    description: 'Number of passed test cases'
+    required: true
+  failed-tests:
+    description: 'Number of failed test cases'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Publish test evidence
+      uses: https://github.com/cloudbees-io/publish-evidence-item@v1
+      with:
+        content: |-
+          # Ecommerce Frontend - Test Execution Evidence
+
+          ## Summary
+          - **Total Test Cases**: ${{ inputs.total-tests }}
+          - **Passed**: ${{ inputs.passed-tests }}
+          - **Failed**: ${{ inputs.failed-tests }}
+
+          ## Workflow Information
+          - **Run ID**: ${{ cloudbees.run_id }}
+          - **Branch**: ${{ cloudbees.scm.branch }}
+          - **Commit**: ${{ cloudbees.scm.sha }}
+
+          ## Test Details
+          - **Test Framework**: pytest
+          - **Test Type**: JUNIT XML
+          - **Results File**: test-results.xml
