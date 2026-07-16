@@ -13,12 +13,10 @@ on:
         type: string
         required: true
         description: "Target environment (dev, staging, prod)"
-      kubeconfig:
-        type: string
-        required: true
-        description: "Kubernetes config for cluster access"
     secrets:
       DOCKERHUB_USERNAME:
+        required: true
+      KUBECONFIG:
         required: true
 
 jobs:
@@ -46,7 +44,7 @@ jobs:
           echo "$KUBECONFIG_BASE64" | base64 -d > ~/.kube/config
           kubectl cluster-info
         env:
-          KUBECONFIG_BASE64: ${{ inputs.kubeconfig }}
+          KUBECONFIG_BASE64: ${{ secrets.KUBECONFIG }}
           ENVIRONMENT: ${{ inputs.environment }}
 
       - name: Create namespace if not exists
@@ -69,7 +67,7 @@ jobs:
           kubectl get namespace $NAMESPACE || kubectl create namespace $NAMESPACE
           echo "✅ Namespace $NAMESPACE ready"
         env:
-          KUBECONFIG_BASE64: ${{ inputs.kubeconfig }}
+          KUBECONFIG_BASE64: ${{ secrets.KUBECONFIG }}
           ENVIRONMENT: ${{ inputs.environment }}
 
       - name: Cleanup old Helm releases
@@ -92,7 +90,7 @@ jobs:
           kubectl delete secret -n $NAMESPACE -l owner=helm,name=ecommerce-frontend 2>/dev/null || true
           echo "✅ Cleanup done"
         env:
-          KUBECONFIG_BASE64: ${{ inputs.kubeconfig }}
+          KUBECONFIG_BASE64: ${{ secrets.KUBECONFIG }}
           ENVIRONMENT: ${{ inputs.environment }}
 
       - name: Deploy frontend with Helm
@@ -129,7 +127,7 @@ jobs:
 
           echo "✅ Frontend deployment successful!"
         env:
-          KUBECONFIG_BASE64: ${{ inputs.kubeconfig }}
+          KUBECONFIG_BASE64: ${{ secrets.KUBECONFIG }}
           ENVIRONMENT: ${{ inputs.environment }}
           IMAGE_TAG: ${{ inputs.artifact-id }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -163,5 +161,5 @@ jobs:
 
           echo "✅ Frontend is running!"
         env:
-          KUBECONFIG_BASE64: ${{ inputs.kubeconfig }}
+          KUBECONFIG_BASE64: ${{ secrets.KUBECONFIG }}
           ENVIRONMENT: ${{ inputs.environment }}
