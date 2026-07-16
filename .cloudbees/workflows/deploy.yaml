@@ -37,9 +37,9 @@ jobs:
         uses: docker://alpine:latest
         shell: sh
         run: |
-          apk add --no-cache curl
-          curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
-          chmod +x kubectl && mv kubectl /usr/local/bin/
+          apk add --no-cache ca-certificates
+          wget -q "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl" -O /usr/local/bin/kubectl
+          chmod +x /usr/local/bin/kubectl
           mkdir -p ~/.kube
           echo "$KUBECONFIG_BASE64" | base64 -d > ~/.kube/config
           kubectl cluster-info
@@ -51,9 +51,9 @@ jobs:
         uses: docker://alpine:latest
         shell: sh
         run: |
-          apk add --no-cache curl
-          curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
-          chmod +x kubectl && mv kubectl /usr/local/bin/
+          apk add --no-cache ca-certificates
+          wget -q "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl" -O /usr/local/bin/kubectl
+          chmod +x /usr/local/bin/kubectl
           mkdir -p ~/.kube
           echo "$KUBECONFIG_BASE64" | base64 -d > ~/.kube/config
 
@@ -74,9 +74,9 @@ jobs:
         uses: docker://alpine/helm:latest
         shell: sh
         run: |
-          apk add --no-cache curl
-          curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
-          chmod +x kubectl && mv kubectl /usr/local/bin/
+          apk add --no-cache ca-certificates
+          wget -q "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl" -O /usr/local/bin/kubectl
+          chmod +x /usr/local/bin/kubectl
           mkdir -p ~/.kube
           echo "$KUBECONFIG_BASE64" | base64 -d > ~/.kube/config
 
@@ -97,9 +97,9 @@ jobs:
         uses: docker://alpine/helm:latest
         shell: sh
         run: |
-          apk add --no-cache curl
-          curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
-          chmod +x kubectl && mv kubectl /usr/local/bin/
+          apk add --no-cache ca-certificates
+          wget -q "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl" -O /usr/local/bin/kubectl
+          chmod +x /usr/local/bin/kubectl
           mkdir -p ~/.kube
           echo "$KUBECONFIG_BASE64" | base64 -d > ~/.kube/config
 
@@ -136,9 +136,9 @@ jobs:
         uses: docker://alpine:latest
         shell: sh
         run: |
-          apk add --no-cache curl
-          curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
-          chmod +x kubectl && mv kubectl /usr/local/bin/
+          apk add --no-cache ca-certificates
+          wget -q "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl" -O /usr/local/bin/kubectl
+          chmod +x /usr/local/bin/kubectl
           mkdir -p ~/.kube
           echo "$KUBECONFIG_BASE64" | base64 -d > ~/.kube/config
 
