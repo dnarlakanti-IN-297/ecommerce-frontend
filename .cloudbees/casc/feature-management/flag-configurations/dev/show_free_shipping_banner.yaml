@@ -1,0 +1,3 @@
+flag: show_free_shipping_banner
+type: flags
+value: true

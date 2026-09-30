@@ -1,0 +1,6 @@
+flag: show_free_shipping_banner
+type: flags
+description: Show the free-shipping banner on the storefront homepage.
+labels:
+  - frontend
+  - shipping

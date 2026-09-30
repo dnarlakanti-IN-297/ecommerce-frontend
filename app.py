@@ -44,7 +44,8 @@ def index():
     return render_template(
         'index.html',
         products=products,
-        show_promo_banner=flags.show_promo_banner.is_enabled()
+        show_promo_banner=flags.show_promo_banner.is_enabled(),
+        show_free_shipping_banner=flags.show_free_shipping_banner.is_enabled()
     )
 
 @app.route('/products')

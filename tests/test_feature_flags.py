@@ -23,3 +23,17 @@ def test_promo_banner_shown_when_flag_on(client, mock_backend, monkeypatch):
     mock_backend.response = FakeResponse(200, [])
     resp = client.get('/')
     assert b'Limited time offer' in resp.data
+
+
+def test_free_shipping_banner_hidden_when_flag_off(client, mock_backend, monkeypatch):
+    monkeypatch.setattr(app_module.flags.show_free_shipping_banner, 'is_enabled', lambda: False)
+    mock_backend.response = FakeResponse(200, [])
+    resp = client.get('/')
+    assert b'Free shipping' not in resp.data
+
+
+def test_free_shipping_banner_shown_when_flag_on(client, mock_backend, monkeypatch):
+    monkeypatch.setattr(app_module.flags.show_free_shipping_banner, 'is_enabled', lambda: True)
+    mock_backend.response = FakeResponse(200, [])
+    resp = client.get('/')
+    assert b'Free shipping' in resp.data

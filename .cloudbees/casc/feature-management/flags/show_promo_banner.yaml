@@ -1,0 +1,6 @@
+flag: show_promo_banner
+type: flags
+description: Show the promo banner on the storefront homepage.
+labels:
+  - frontend
+  - promo
