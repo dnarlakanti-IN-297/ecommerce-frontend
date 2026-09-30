@@ -1,0 +1,3 @@
+flag: show_promo_banner
+type: flags
+value: true

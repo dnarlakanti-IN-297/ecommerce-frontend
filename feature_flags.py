@@ -28,6 +28,10 @@ class ServerFlags:
         # promo banner without a redeploy.
         self.show_promo_banner = RoxFlag(False)
 
+        # Second flag, used to validate CasC sync: shows a free-shipping
+        # message on the homepage.
+        self.show_free_shipping_banner = RoxFlag(False)
+
 
 flags = ServerFlags()
 
